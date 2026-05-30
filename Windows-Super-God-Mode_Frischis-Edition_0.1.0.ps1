@@ -629,7 +629,7 @@ function TestPathSafe {
         return $testPathResult
     }
     catch {
-        Write-Debug "Fehler bei sicherer Pfadprüfung für $Path: $_"
+        Write-Debug "Fehler bei sicherer Pfadprüfung für ${Path}: $_"
         return $false
     }
 }
@@ -1113,7 +1113,7 @@ function Create-CLSID-Shortcut {
         return $true
     }
     catch {
-        Write-Error "Fehler beim Erstellen des CLSID-Shortcuts für $name: $_"
+        Write-Error "Fehler beim Erstellen des CLSID-Shortcuts für ${name}: $_"
         return $false
     }
 }
@@ -1244,7 +1244,7 @@ function Create-TaskLink-Shortcut {
         }
         return $true
     } catch {
-        Write-Host "Fehler beim Generieren der Verknüpfung für $name: $_"
+        Write-Host "Fehler beim Generieren der Verknüpfung für ${name}: $_"
         return $false
     }
 }
@@ -1461,7 +1461,7 @@ function Create-NamedShortcut {
         return $true
     }
     catch {
-        Write-Host "Konnte Ordnerverknüpfung nicht erstellen für $name: $_"
+        Write-Host "Konnte Ordnerverknüpfung nicht erstellen für ${name}: $_"
         return $false
     }
 }
@@ -2203,21 +2203,28 @@ function Get-ProtocolsInProgramFiles {
     # '-Parallel' verteilt die Last automatisch auf alle verfügbaren Kerne deines Prozessors.
     # Wir übergeben die Regexes und Variablen via '$using:' an die abgeschotteten Worker-Threads.
     $filesToSearch | ForEach-Object -Parallel {
+        $encodingMap = $using:encodingMap
+        $protocolsList = $using:protocolsList
+        $utf8Regex = $using:utf8Regex
+        $unicodeRegex = $using:unicodeRegex
+        $regexOptions = $using:regexOptions
+        $synchronizedResults = $using:synchronizedResults
+
         $file = $_
         try {
             $null = Test-Path -LiteralPath $file.FullName -PathType Leaf -ErrorAction Stop
         } catch { return } # Äquivalent zu 'continue' im Thread
 
         $fileExtension = $file.Extension
-        $encodingsToTry = if ($using:encodingMap.ContainsKey($fileExtension)) { @($using:encodingMap[$fileExtension]) } else { @("UTF-8", "Unicode") }
+        $encodingsToTry = if ($encodingMap.ContainsKey($fileExtension)) { @($encodingMap[$fileExtension]) } else { @("UTF-8", "Unicode") }
 
         foreach ($encodingName in $encodingsToTry) {
             $encoding = [System.Text.Encoding]::GetEncoding($encodingName)
             try {
                 $content = [System.IO.File]::ReadAllText($file.FullName, $encoding)
-                foreach ($protocol in $using:protocolsList) {
-                    $uriPattern = if ($encodingName -eq "UTF-8") { $using:utf8Regex[$protocol] } else { $using:unicodeRegex[$protocol] }
-                    $URImatches = [regex]::Matches($content, $uriPattern, $using:regexOptions)
+                foreach ($protocol in $protocolsList) {
+                    $uriPattern = if ($encodingName -eq "UTF-8") { $utf8Regex[$protocol] } else { $unicodeRegex[$protocol] }
+                    $URImatches = [regex]::Matches($content, $uriPattern, $regexOptions)
                     
                     if ($URImatches.Count -gt 0) {
                         foreach ($match in $URImatches) {
@@ -2229,7 +2236,7 @@ function Get-ProtocolsInProgramFiles {
                                 Protocol      = $protocol
                             }
                             # Sicherer Eintrag in synchronisierte Liste
-                            [void]$using:synchronizedResults.Add($foundItem)
+                            [void]$synchronizedResults.Add($foundItem)
                         }
                     }
                 }
