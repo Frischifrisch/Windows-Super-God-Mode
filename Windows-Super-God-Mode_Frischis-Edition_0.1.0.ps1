@@ -619,7 +619,7 @@ $permanentURIProtocols = @(
     'wss','xcon','xcon-userid','xmlrpc.beep','xmlrpc.beeps','xmpp','z39.50r','z39.50s'
 )
 
-function Test-Path-Safe {
+function TestPathSafe {
     param (
         [Parameter(Mandatory=$true)]
         [string]$Path
@@ -635,17 +635,17 @@ function Test-Path-Safe {
 }
 
 if ($CustomAllSystemSettingsXMLPath) {
-    if (-not (Test-Path-Safe $CustomAllSystemSettingsXMLPath)) {
+    if (-not (TestPathSafe $CustomAllSystemSettingsXMLPath)) {
         Write-Error "Der angegebene Pfad existiert nicht: $CustomAllSystemSettingsXMLPath"
         return
     } else {
         $allSettingsXmlPath = $CustomAllSystemSettingsXMLPath
     }
-} elseif (Test-Path-Safe $allSettingsXmlPath1) {
+} elseif (TestPathSafe $allSettingsXmlPath1) {
     $allSettingsXmlPath = $allSettingsXmlPath1
-} elseif (Test-Path-Safe $allSettingsXmlPath2) {
+} elseif (TestPathSafe $allSettingsXmlPath2) {
     $allSettingsXmlPath = $allSettingsXmlPath2
-} elseif (Test-Path-Safe $allSettingsXmlPath3) {
+} elseif (TestPathSafe $allSettingsXmlPath3) {
     $allSettingsXmlPath = $allSettingsXmlPath3
 } else {
     Write-Error "Keine AllSystemSettings XML-Datei gefunden. Deep-Links können leider nicht erstellt werden."
